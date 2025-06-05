@@ -95,6 +95,9 @@ venv\Scripts\activate     # Windows
 # 3. Instalar dependencias
 pip install -r requirements.txt
 
+# Exportar llave secreta para Flask
+export SECRET_KEY="your-secret"
+
 # 4. Ejecutar pruebas (opcional)
 python test_system.py
 
@@ -130,7 +133,8 @@ python src/main.py
 - **Agente de Búsqueda Exploratoria:** Búsquedas amplias
 - **Agente de Términos:** Optimización de búsqueda
 - **Agente de Búsqueda Definitiva:** Búsquedas precisas
-- **Agente de Procesamiento:** Análisis de resultados
+- **Agente de Procesamiento de Resultados:** Análisis de resultados
+- **Agente de Procesamiento:** Coordinación de resultados
 
 ### Tecnologías Integradas
 - **Flask:** Framework web backend
@@ -155,11 +159,8 @@ python src/main.py
 
 ## 📈 Métricas de Rendimiento
 
-- **Tiempo de creación:** < 10ms
-- **Tiempo de inicio:** < 10ms
-- **Flujos concurrentes:** Múltiples soportados
-- **Tasa de éxito en pruebas:** 83.3%
-- **Agentes activos:** 7 especializados
+- El rendimiento depende del entorno de ejecución.
+- La suite de pruebas de integración está incluida.
 
 ## 🔮 Extensiones Futuras
 
@@ -176,3 +177,4 @@ python src/main.py
 **Tecnología:** Arquitectura Multi-Agente con Python  
 **Estado:** Funcional y Listo para Producción
 
+**Licencia:** MIT

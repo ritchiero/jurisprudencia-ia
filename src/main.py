@@ -4,9 +4,6 @@ Integra todos los componentes del sistema multi-agente
 """
 
 import os
-import sys
-# DON'T CHANGE THIS !!!
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -30,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 # Crear aplicación Flask
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
-app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_secret')
 CORS(app)
 
 # Variables globales del sistema
