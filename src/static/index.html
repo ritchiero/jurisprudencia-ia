@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Agéntico de Jurisprudencias SCJN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .agent-card {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            background-color: #9CA3AF;
+            display: inline-block;
+            margin: 0 1px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        .workflow-step {
+            position: relative;
+        }
+        
+        .workflow-step::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -20px;
+            width: 40px;
+            height: 2px;
+            background: #E5E7EB;
+            transform: translateY(-50%);
+        }
+        
+        .workflow-step:last-child::after {
+            display: none;
+        }
+        
+        .workflow-step.active::after {
+            background: #3B82F6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                        <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">Sistema Agéntico SCJN</h1>
+                        <p class="text-sm opacity-90">Búsqueda Inteligente de Jurisprudencias</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="systemStatus" class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-yellow-400 rounded-full pulse-dot"></div>
+                        <span class="text-sm">Inicializando...</span>
+                    </div>
+                    <button id="metricsBtn" class="glass-effect px-4 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Search Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Consulta Jurisprudencias</h2>
+                <p class="text-gray-600">Utiliza inteligencia artificial para encontrar jurisprudencias relevantes</p>
+            </div>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="relative">
+                    <textarea 
+                        id="searchInput" 
+                        placeholder="Ejemplo: Busco información sobre marcas y caducidad administrativa en reconvencional..."
+                        class="w-full p-4 pr-16 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none resize-none h-24 text-gray-700"
+                    ></textarea>
+                    <button 
+                        id="searchBtn" 
+                        class="absolute right-3 bottom-3 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <!-- Quick Suggestions -->
+                <div class="mt-4">
+                    <p class="text-sm text-gray-500 mb-2">Sugerencias rápidas:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="suggestion-btn px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
+                            Marcas y caducidad
+                        </button>
+                        <button class="suggestion-btn px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
+                            Amparo directo
+                        </button>
+                        <button class="suggestion-btn px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
+                            Procedimiento administrativo
+                        </button>
+                        <button class="suggestion-btn px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
+                            Derechos humanos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Visualization -->
+        <div id="workflowSection" class="bg-white rounded-2xl shadow-xl p-8 mb-8 hidden">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i data-lucide="workflow" class="w-5 h-5 mr-2"></i>
+                Flujo de Trabajo Agéntico
+            </h3>
+            <div id="workflowSteps" class="flex items-center justify-between overflow-x-auto pb-4">
+                <!-- Steps will be populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Agents Status -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Active Agents -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i data-lucide="users" class="w-5 h-5 mr-2"></i>
+                    Agentes Activos
+                </h3>
+                <div id="agentsGrid" class="space-y-3">
+                    <!-- Agents will be populated dynamically -->
+                </div>
+            </div>
+
+            <!-- System Metrics -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i data-lucide="activity" class="w-5 h-5 mr-2"></i>
+                    Métricas del Sistema
+                </h3>
+                <div id="metricsGrid" class="space-y-4">
+                    <!-- Metrics will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="bg-white rounded-2xl shadow-xl p-8 hidden">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i data-lucide="file-text" class="w-5 h-5 mr-2"></i>
+                Resultados de Búsqueda
+            </h3>
+            <div id="resultsContainer">
+                <!-- Results will be populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div id="chatSection" class="bg-white rounded-2xl shadow-xl p-6 hidden">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i data-lucide="message-circle" class="w-5 h-5 mr-2"></i>
+                Conversación con IA
+            </h3>
+            <div id="chatMessages" class="h-64 overflow-y-auto border rounded-lg p-4 mb-4 bg-gray-50">
+                <!-- Chat messages will appear here -->
+            </div>
+            <div class="flex space-x-2">
+                <input 
+                    id="chatInput" 
+                    type="text" 
+                    placeholder="Haz una pregunta sobre los resultados..."
+                    class="flex-1 p-3 border rounded-lg focus:outline-none focus:border-blue-500"
+                >
+                <button 
+                    id="chatSendBtn" 
+                    class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 max-w-md mx-4">
+            <div class="text-center">
+                <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Procesando Consulta</h3>
+                <p class="text-gray-600 mb-4">Los agentes están trabajando en tu solicitud...</p>
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Global state
+        let currentWorkflowId = null;
+        let systemStatus = 'initializing';
+        let agentsData = {};
+
+        // DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loadingModal = document.getElementById('loadingModal');
+        const workflowSection = document.getElementById('workflowSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const chatSection = document.getElementById('chatSection');
+        const systemStatusEl = document.getElementById('systemStatus');
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            startStatusPolling();
+        });
+
+        function initializeApp() {
+            // Check system health
+            checkSystemHealth();
+            
+            // Load agents status
+            loadAgentsStatus();
+            
+            // Load system metrics
+            loadSystemMetrics();
+        }
+
+        function setupEventListeners() {
+            // Search functionality
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    performSearch();
+                }
+            });
+
+            // Suggestion buttons
+            document.querySelectorAll('.suggestion-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    searchInput.value = this.textContent.trim();
+                    performSearch();
+                });
+            });
+
+            // Metrics button
+            document.getElementById('metricsBtn').addEventListener('click', function() {
+                loadSystemMetrics();
+            });
+        }
+
+        async function checkSystemHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                updateSystemStatus(data.status, data.agentic_available);
+                
+                if (data.system_status) {
+                    agentsData = data.system_status.agents_status || {};
+                    updateAgentsDisplay();
+                }
+            } catch (error) {
+                console.error('Error checking system health:', error);
+                updateSystemStatus('error', false);
+            }
+        }
+
+        function updateSystemStatus(status, agenticAvailable) {
+            systemStatus = status;
+            const statusEl = systemStatusEl;
+            const dot = statusEl.querySelector('.pulse-dot');
+            const text = statusEl.querySelector('span');
+
+            if (status === 'healthy') {
+                dot.className = 'w-3 h-3 bg-green-400 rounded-full pulse-dot';
+                text.textContent = agenticAvailable ? 'Sistema Agéntico Activo' : 'Modo Básico';
+            } else if (status === 'initializing') {
+                dot.className = 'w-3 h-3 bg-yellow-400 rounded-full pulse-dot';
+                text.textContent = 'Inicializando...';
+            } else {
+                dot.className = 'w-3 h-3 bg-red-400 rounded-full pulse-dot';
+                text.textContent = 'Error del Sistema';
+            }
+        }
+
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            searchBtn.disabled = true;
+            loadingModal.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.mode === 'agentic') {
+                        currentWorkflowId = data.workflow_id;
+                        showWorkflowSection();
+                        startWorkflowPolling();
+                    } else {
+                        // Demo mode
+                        displayDemoResults(query);
+                    }
+                } else {
+                    throw new Error(data.error || 'Error en la búsqueda');
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                alert('Error realizando búsqueda: ' + error.message);
+            } finally {
+                searchBtn.disabled = false;
+                loadingModal.classList.add('hidden');
+            }
+        }
+
+        async function displayDemoResults(query) {
+            try {
+                const response = await fetch('/api/demo/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data.results, query, 'demo');
+                }
+            } catch (error) {
+                console.error('Demo search error:', error);
+            }
+        }
+
+        function showWorkflowSection() {
+            workflowSection.classList.remove('hidden');
+            
+            const steps = [
+                { id: 'interpretation', name: 'Interpretación', icon: 'brain' },
+                { id: 'exploratory_search', name: 'Búsqueda Exploratoria', icon: 'search' },
+                { id: 'term_optimization', name: 'Optimización', icon: 'settings' },
+                { id: 'definitive_search', name: 'Búsqueda Definitiva', icon: 'target' },
+                { id: 'result_processing', name: 'Procesamiento', icon: 'filter' }
+            ];
+
+            const stepsContainer = document.getElementById('workflowSteps');
+            stepsContainer.innerHTML = steps.map(step => `
+                <div class="workflow-step flex flex-col items-center min-w-0 flex-1" data-step="${step.id}">
+                    <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-2">
+                        <i data-lucide="${step.icon}" class="w-5 h-5 text-gray-500"></i>
+                    </div>
+                    <span class="text-sm text-gray-600 text-center">${step.name}</span>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        async function startWorkflowPolling() {
+            if (!currentWorkflowId) return;
+
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/workflow/${currentWorkflowId}/status`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        updateWorkflowDisplay(data.workflow_status);
+
+                        if (data.workflow_status.status === 'completed') {
+                            clearInterval(pollInterval);
+                            loadWorkflowResults();
+                        } else if (data.workflow_status.status === 'failed') {
+                            clearInterval(pollInterval);
+                            alert('El flujo de trabajo falló');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Workflow polling error:', error);
+                }
+            }, 2000);
+        }
+
+        function updateWorkflowDisplay(workflowStatus) {
+            const steps = workflowStatus.steps;
+            
+            Object.keys(steps).forEach(stepId => {
+                const stepEl = document.querySelector(`[data-step="${stepId}"]`);
+                if (stepEl) {
+                    const circle = stepEl.querySelector('div');
+                    const icon = stepEl.querySelector('i');
+                    
+                    const stepStatus = steps[stepId].status;
+                    
+                    if (stepStatus === 'completed') {
+                        circle.className = 'w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-2';
+                        icon.className = 'w-5 h-5 text-white';
+                        stepEl.classList.add('active');
+                    } else if (stepStatus === 'in_progress') {
+                        circle.className = 'w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2 animate-pulse';
+                        icon.className = 'w-5 h-5 text-white';
+                    } else if (stepStatus === 'failed') {
+                        circle.className = 'w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-2';
+                        icon.className = 'w-5 h-5 text-white';
+                    }
+                }
+            });
+        }
+
+        async function loadWorkflowResults() {
+            try {
+                const response = await fetch(`/api/workflow/${currentWorkflowId}/results`);
+                const data = await response.json();
+
+                if (data.success && data.results) {
+                    const finalResults = data.results.results?.result_processing?.processed_results || [];
+                    displayResults(finalResults, searchInput.value, 'agentic');
+                }
+            } catch (error) {
+                console.error('Error loading results:', error);
+            }
+        }
+
+        function displayResults(results, query, mode) {
+            resultsSection.classList.remove('hidden');
+            chatSection.classList.remove('hidden');
+
+            const container = document.getElementById('resultsContainer');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i data-lucide="search-x" class="w-16 h-16 text-gray-400 mx-auto mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-600 mb-2">No se encontraron resultados</h3>
+                        <p class="text-gray-500">Intenta con términos diferentes o más generales</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                        <p class="text-blue-800">
+                            <strong>Consulta:</strong> ${query}<br>
+                            <strong>Modo:</strong> ${mode === 'agentic' ? 'Sistema Agéntico' : 'Demostración'}<br>
+                            <strong>Resultados encontrados:</strong> ${results.length}
+                        </p>
+                    </div>
+                    <div class="space-y-4">
+                        ${results.map((result, index) => `
+                            <div class="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h4 class="text-lg font-semibold text-gray-800 flex-1">${result.title}</h4>
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm ml-4">
+                                        ${Math.round((result.relevance_score || result.relevance || 0) * 100)}% relevancia
+                                    </span>
+                                </div>
+                                <p class="text-gray-600 mb-3">${result.summary || result.content || 'Sin resumen disponible'}</p>
+                                <div class="flex items-center justify-between text-sm text-gray-500">
+                                    <div class="flex items-center space-x-4">
+                                        <span><strong>Fuente:</strong> ${result.source}</span>
+                                        ${result.registro ? `<span><strong>Registro:</strong> ${result.registro}</span>` : ''}
+                                        ${result.metadata?.epoca ? `<span><strong>Época:</strong> ${result.metadata.epoca}</span>` : ''}
+                                    </div>
+                                    ${result.url ? `<a href="${result.url}" target="_blank" class="text-blue-600 hover:text-blue-800">Ver completa</a>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            lucide.createIcons();
+        }
+
+        async function loadAgentsStatus() {
+            try {
+                const response = await fetch('/api/agents/status');
+                const data = await response.json();
+
+                if (data.success) {
+                    agentsData = data.agents_status;
+                    updateAgentsDisplay();
+                }
+            } catch (error) {
+                console.error('Error loading agents status:', error);
+            }
+        }
+
+        function updateAgentsDisplay() {
+            const container = document.getElementById('agentsGrid');
+            
+            if (Object.keys(agentsData).length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-gray-500">No hay agentes activos</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = Object.entries(agentsData).map(([agentId, agent]) => `
+                <div class="agent-card flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 rounded-full ${getStatusColor(agent.status)}"></div>
+                        <div>
+                            <p class="font-medium text-gray-800">${formatAgentName(agentId)}</p>
+                            <p class="text-sm text-gray-500">${agent.capabilities?.join(', ') || 'Sin capacidades'}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs bg-gray-200 px-2 py-1 rounded">${agent.status}</span>
+                </div>
+            `).join('');
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'idle': return 'bg-green-400';
+                case 'busy': return 'bg-yellow-400';
+                case 'error': return 'bg-red-400';
+                default: return 'bg-gray-400';
+            }
+        }
+
+        function formatAgentName(agentId) {
+            const names = {
+                'orquestador': 'Orquestador',
+                'interpretacion': 'Interpretación',
+                'busqueda_exploratoria': 'Búsqueda Exploratoria',
+                'terminos_busqueda': 'Términos de Búsqueda',
+                'busqueda_definitiva': 'Búsqueda Definitiva',
+                'procesamiento_resultados': 'Procesamiento de Resultados',
+                'procesamiento_busqueda': 'Procesamiento'
+            };
+            return names[agentId] || agentId;
+        }
+
+        async function loadSystemMetrics() {
+            try {
+                const response = await fetch('/api/system/metrics');
+                const data = await response.json();
+
+                if (data.success) {
+                    updateMetricsDisplay(data.metrics);
+                }
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+            }
+        }
+
+        function updateMetricsDisplay(metrics) {
+            const container = document.getElementById('metricsGrid');
+            
+            const workflowMetrics = metrics.workflow_metrics || {};
+            const systemStatus = metrics.system_status || {};
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <span class="text-blue-800 font-medium">Flujos Totales</span>
+                    <span class="text-blue-600 font-bold">${workflowMetrics.total_workflows || 0}</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <span class="text-green-800 font-medium">Tasa de Éxito</span>
+                    <span class="text-green-600 font-bold">${Math.round(workflowMetrics.success_rate || 0)}%</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                    <span class="text-purple-800 font-medium">Agentes Activos</span>
+                    <span class="text-purple-600 font-bold">${systemStatus.total_agents || 0}</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                    <span class="text-yellow-800 font-medium">Tiempo Promedio</span>
+                    <span class="text-yellow-600 font-bold">${Math.round(workflowMetrics.average_execution_time || 0)}s</span>
+                </div>
+            `;
+        }
+
+        function startStatusPolling() {
+            setInterval(() => {
+                checkSystemHealth();
+                loadAgentsStatus();
+            }, 10000); // Poll every 10 seconds
+        }
+    </script>
+</body>
+</html>
+
